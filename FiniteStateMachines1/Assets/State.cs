@@ -8,7 +8,7 @@ public class State
     // 'States' that the NPC could be in.
     public enum STATE
     {
-        IDLE, PATROL, PURSUE, ATTACK, SLEEP
+        IDLE, PATROL, PURSUE, ATTACK, SLEEP,SAFE
     };
 
     // 'Events' - where we are in the running of a STATE.
@@ -28,7 +28,7 @@ public class State
     float visDist = 10.0f; // When the player is within a distance of 10 from the NPC, then the NPC should be able to see it...
     float visAngle = 30.0f; // ...if the player is within 30 degrees of the line of sight.
     float shootDist = 7.0f; // When the player is within a distance of 7 from the NPC, then the NPC can go into an ATTACK state.
-
+    float sneakDist = 3.0f;
     // Constructor for State
     public State(GameObject _npc, NavMeshAgent _agent, Animator _anim, Transform _player)
     {
@@ -70,6 +70,16 @@ public class State
     {
         Vector3 direction = player.position - npc.transform.position;
         if (direction.magnitude < shootDist)
+        {
+            return true;
+        }
+        return false;
+    }
+    public bool IsPlayerBehind()
+    {
+
+        Vector3 direction = npc.transform.position - player.position;
+        if (direction.magnitude < sneakDist && !CanSeePlayer())
         {
             return true;
         }
@@ -161,6 +171,11 @@ public class Patrol : State
             nextState = new Pursue(npc, agent, anim, player);
             stage = EVENT.EXIT;
         }
+        else if (IsPlayerBehind())
+        {
+            nextState = new Safe(npc, agent, anim, player);
+            stage = EVENT.EXIT;
+        }
     }
 
     public override void Exit()
@@ -241,6 +256,42 @@ public class Attack : State
     {
         anim.ResetTrigger("isShooting");
         shoot.Stop();
+        base.Exit();
+    }
+}
+public class Safe : State
+{
+    GameObject Cube;
+    
+    public Safe(GameObject _npc, NavMeshAgent _agent, Animator _anim, Transform _player)
+                : base(_npc, _agent, _anim, _player)
+    {
+        name = STATE.SAFE;
+        agent.speed = 5;
+        agent.isStopped = false;
+        Cube = GameObject.FindGameObjectWithTag("Safe");
+
+    }
+    public override void Enter()
+    {
+        anim.SetTrigger("isRunning");
+        agent.SetDestination(Cube.transform.position);
+        base.Enter();
+    }
+    public override void Update()
+    {  
+        
+        
+        if(agent.remainingDistance < 2) {
+            nextState = new Idle(npc, agent, anim, player);
+            stage = EVENT.EXIT;
+        }
+
+        
+    }
+    public override void Exit()
+    {
+        anim.ResetTrigger("isRunning");
         base.Exit();
     }
 }
