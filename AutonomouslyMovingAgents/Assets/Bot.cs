@@ -56,7 +56,7 @@ public class Bot : MonoBehaviour
     {
         float wanderRadius = 10;
         float wanderDistance = 20;
-        float wanderJitter = 1;
+        float wanderJitter = 3;
 
         wanderTarget += new Vector3(Random.Range(-1.0f, 1.0f) * wanderJitter, 0, Random.Range(-1.0f, 1.0f) * wanderJitter);
         wanderTarget.Normalize();
@@ -115,7 +115,7 @@ public class Bot : MonoBehaviour
         Seek(info.point + chosenDir.normalized * 2);
     }
 
-    bool CanSeeTarget()
+    bool AgentCanSeeTarget()
     {
         RaycastHit rayCastInfo;
         Vector3 rayToTarget = target.transform.position - this.transform.position;
@@ -128,7 +128,19 @@ public class Bot : MonoBehaviour
         }
         return false;
     }
-
+    bool TargetCanSeeAgent()
+    {
+        Vector3 toAgent = this.transform.position - target.transform.position;
+        float visAngle = Vector3.Angle(target.transform.forward, toAgent);
+        if (visAngle < 60)
+            return true;
+        return false;
+    }
+    bool coolDown = false;
+    void BehaviorCoolDown()
+    {
+        coolDown = false;
+    }
     void Update()
     {
         //Seek(target.transform.position);
@@ -137,7 +149,22 @@ public class Bot : MonoBehaviour
         //Evade();
         //Wander();
         //Hide();
-        if (CanSeeTarget())
-            CleverHide();
+        Vector3 distance = this.transform.position - target.transform.position;
+        if (distance.magnitude > 10)
+            Wander();
+        else
+        {
+            if (!coolDown)
+            {
+                if (AgentCanSeeTarget() && TargetCanSeeAgent())
+                {
+                    CleverHide();
+                    coolDown = true;
+                    Invoke("BehaviorCoolDown", 5);
+                }
+                else
+                    Pursuit();
+            }
+        }
     }
 }
