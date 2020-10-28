@@ -6,6 +6,7 @@ public class Flock : MonoBehaviour
 {
     public FlockManager myManager;
     float speed;
+    bool turning = false;
     // Start is called before the first frame update
     void Start()
     {
@@ -15,8 +16,29 @@ public class Flock : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        ApplyRules();
-        transform.Translate(0, 0, Time.deltaTime * speed);
+        Bounds b = new Bounds(myManager.transform.position, myManager.swimLimits * 2); // determine the box where the fish are
+
+        if (!b.Contains(transform.position))
+        {
+            turning = true; // turn back if going out of bounds
+        }
+        else
+            turning = false;
+
+        if (turning)
+        {
+            Vector3 direction = myManager.transform.position - transform.position;
+            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(direction), Time.deltaTime * myManager.rotationSpeed);
+        }
+        else
+        {
+            //if (Random.Range(0, 100) < 10)
+              //  speed = Random.Range(myManager.minSpeed, myManager.maxSpeed);
+            //if (Random.Range(0, 100) < 20)
+                ApplyRules();
+            transform.Translate(0, 0, Time.deltaTime * speed);
+        }
+       
     }
 
     void ApplyRules()
@@ -50,7 +72,7 @@ public class Flock : MonoBehaviour
         }
         if(groupSize > 0)
         {
-            vCenter = vCenter / groupSize;
+            vCenter = vCenter / groupSize + (myManager.goalPos - this.transform.position);
             speed = gSpeed / groupSize;
 
             Vector3 direction = (vCenter+ vAvoid) - transform.position;
