@@ -16,25 +16,34 @@ public class Flock : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        Bounds b = new Bounds(myManager.transform.position, myManager.swimLimits * 2); // determine the box where the fish are
+        Bounds b = new Bounds(myManager.transform.position, myManager.swimLimits * 3); // determine the box where the fish are
+        RaycastHit hit = new RaycastHit();
+        Vector3 direction = Vector3.zero;
 
         if (!b.Contains(transform.position))
         {
-            turning = true; // turn back if going out of bounds
+            turning = true;// turn back if going out of bounds
+            direction = myManager.transform.position - transform.position;
+            this.transform.Translate(0, 0, 1); // for the fish getting stuck out of bounds
+        }
+        else if (Physics.Raycast(transform.position,this.transform.forward * 50,out hit))
+        {
+            turning = true;
+            direction = Vector3.Reflect(this.transform.forward, hit.normal);
         }
         else
             turning = false;
 
         if (turning)
         {
-            Vector3 direction = myManager.transform.position - transform.position;
+            
             transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(direction), Time.deltaTime * myManager.rotationSpeed);
         }
         else
         {
-            //if (Random.Range(0, 100) < 10)
-              //  speed = Random.Range(myManager.minSpeed, myManager.maxSpeed);
-            //if (Random.Range(0, 100) < 20)
+            if (Random.Range(0, 100) < 10)
+                speed = Random.Range(myManager.minSpeed, myManager.maxSpeed);
+            if (Random.Range(0, 100) < 20)
                 ApplyRules();
             transform.Translate(0, 0, Time.deltaTime * speed);
         }
